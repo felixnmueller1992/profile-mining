@@ -1,0 +1,7 @@
+﻿llm.env
+*.env
+!llm.env.example
+api_key*
+__pycache__/
+.pytest_cache/
+*.pyc

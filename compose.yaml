@@ -1,0 +1,61 @@
+# Ein-Befehl-Start des Profilmining-Dienstes.
+#   Mock (ohne Key):      docker compose up --build
+#   Uni-LLM-API:          docker compose --env-file ..\..\api_key_notiz.txt up --build
+# Die env-Datei liegt bewusst AUSSERHALB des Code-Ordners (nicht Teil der Abgabe).
+#
+# HOST_PORT waehlt nur den Port auf dem HOST (im Container bleibt es immer 8080).
+# Voreinstellung 8080; anpassen, falls der Port belegt ist:
+#   $env:HOST_PORT = "8081"; docker compose up -d
+# Fuer den Verbund ist der Host-Port ohne Bedeutung -- Traefik spricht den Container
+# direkt im Netz app-public an. Dafuer: compose.verbund.yaml dazunehmen.
+services:
+  profile-mining:
+    build:
+      context: .
+    image: profile-mining-full
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    environment:
+      PROFILE_MINING_PROVIDER: ${PROFILE_MINING_PROVIDER:-mock}
+      # Uni-LLM-API (GWDG). LLM_MODEL gilt AUSSCHLIESSLICH hier; ohne Vorgabe leer,
+      # sonst meldet der Provider bei den kommerziellen Anbietern einen Hinweis.
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://chat-ai.academiccloud.de/v1}
+      LLM_MODEL: ${LLM_MODEL:-}
+      UNI_LLM_API_KEY: ${UNI_LLM_API_KEY:-}
+      # Kommerzielle Anbieter (Studie 1). Schluessel und optionale Modellwahl je
+      # Anbieter getrennt; ohne gesetzten Schluessel bleiben sie schlicht leer.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      MISTRAL_MODEL: ${MISTRAL_MODEL:-}
+      API_PREFIX: ${API_PREFIX:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # Sichere Voreinstellungen. Fuer eine Vorfuehrung ohne Token:
+      # STRICT_AUTH=0 setzen oder den Header X-User-Id mitschicken.
+      STRICT_AUTH: ${STRICT_AUTH:-1}
+      ALLOW_DEV_IDENTITY: ${ALLOW_DEV_IDENTITY:-1}
+      MAX_JOBS_PER_WINDOW: ${MAX_JOBS_PER_WINDOW:-5}
+      RATE_WINDOW_S: ${RATE_WINDOW_S:-3600}
+      MAX_JOBS_TOTAL: ${MAX_JOBS_TOTAL:-500}
+      MAX_DOC_BYTES: ${MAX_DOC_BYTES:-20000000}
+      MAX_EMBEDS_PER_WINDOW: ${MAX_EMBEDS_PER_WINDOW:-60}
+      RESULT_TTL_S: ${RESULT_TTL_S:-3600}
+      # Weitere Einstellungen aus README.md. Fehlten hier bisher und liessen sich
+      # deshalb ueber die env-Datei nicht setzen. EMBED_MODEL braucht einen echten
+      # Standardwert: leer gesetzt, wuerde er die Voreinstellung im Code ueberdecken.
+      EMBED_MODEL: ${EMBED_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      PROFILE_MINING_REPRESENTATION: ${PROFILE_MINING_REPRESENTATION:-text}
+      PROFILE_MINING_TERM_EMBEDDINGS: ${PROFILE_MINING_TERM_EMBEDDINGS:-0}
+      PROFILE_MINING_VERIFY_EVIDENCE: ${PROFILE_MINING_VERIFY_EVIDENCE:-1}
+      PROFILE_MINING_RESPONSE_SCHEMA: ${PROFILE_MINING_RESPONSE_SCHEMA:-1}
+      LLM_MIN_INTERVAL: ${LLM_MIN_INTERVAL:-0}
+      URL_ALLOWED_HOSTS: ${URL_ALLOWED_HOSTS:-}
+    volumes:
+      # Pfad im Konto des unprivilegierten Dienstnutzers (USER app im Dockerfile),
+      # nicht mehr /root: Embedding-Modell uebersteht Neustarts.
+      - hf_cache:/home/app/.cache/huggingface
+
+volumes:
+  hf_cache:

@@ -1,0 +1,4 @@
+Abstract. We study attention mechanisms and transformers for natural language processing,
+with a focus on language models and question answering. We also report experiments on
+dense retrieval for recommender systems. Our results suggest that instruction-tuned
+embeddings improve cross-lingual matching.

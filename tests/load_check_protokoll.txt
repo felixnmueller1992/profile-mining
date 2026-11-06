@@ -1,0 +1,47 @@
+Protokoll des Lastskripts tests/load_check.py (Ausarbeitung, Abschnitt 8.6)
+==========================================================================
+Datum:      07.10.2026, 11:42-11:43 UTC
+Umgebung:   Linux-Container mit 2 Kernen, Python 3.13, uvicorn, Provider "mock"
+            (regelbasierte Referenz, ohne Modellzugriff), MAX_JOBS_TOTAL=100000
+Code-Stand: Code/profile_mining vom 07.10.2026 (service.py 10:07)
+Aufruf:     python3 tests/load_check.py   (viermal hintereinander)
+
+A  Atomaritaet der Einreichung: 32 parallele PATCH auf denselben Job
+B  Dokumentgrenze unter Parallelitaet: 80 Uploads, Grenze 20
+C  vollstaendiger Lebenszyklus (anlegen, hochladen, einreichen, pollen, abholen),
+   je Nutzer vier Durchlaeufe
+D  Threads und Speicher des Serverprozesses nach Last
+E  Antwortzeit des Statuspollings bei 5000 offenen Jobs
+
+=== Lauf 1 (2026-10-07T11:42:17Z)
+A  32 parallele PATCH -> 1x 202 Accepted, 31x 409 Conflict
+B  80 parallele Uploads bei Grenze 20 -> 20 Dokumente gespeichert
+C    1 parallele Nutzer, 4 Laeufe:   0.1s Gesamtzeit,   73.4 Profile/s, Median     15 ms, p95     15 ms, erfolgreich 4/4
+C   25 parallele Nutzer, 100 Laeufe:   1.0s Gesamtzeit,  102.6 Profile/s, Median    232 ms, p95    277 ms, erfolgreich 100/100
+C  100 parallele Nutzer, 400 Laeufe:   4.5s Gesamtzeit,   88.3 Profile/s, Median   1146 ms, p95   1288 ms, erfolgreich 400/400
+D  Serverprozess nach Last: Threads:	41, RSS 63 MB
+E  GET /profiling bei 5000 tatsaechlich offenen Jobs: Median 1.48 ms
+=== Lauf 2 (2026-10-07T11:42:33Z)
+A  32 parallele PATCH -> 1x 202 Accepted, 31x 409 Conflict
+B  80 parallele Uploads bei Grenze 20 -> 20 Dokumente gespeichert
+C    1 parallele Nutzer, 4 Laeufe:   0.0s Gesamtzeit,  101.4 Profile/s, Median     10 ms, p95     11 ms, erfolgreich 4/4
+C   25 parallele Nutzer, 100 Laeufe:   1.0s Gesamtzeit,   99.5 Profile/s, Median    251 ms, p95    277 ms, erfolgreich 100/100
+C  100 parallele Nutzer, 400 Laeufe:   4.1s Gesamtzeit,   97.0 Profile/s, Median   1048 ms, p95   1163 ms, erfolgreich 400/400
+D  Serverprozess nach Last: Threads:	40, RSS 64 MB
+E  GET /profiling bei 5000 tatsaechlich offenen Jobs: Median 2.15 ms
+=== Lauf 3 (2026-10-07T11:42:49Z)
+A  32 parallele PATCH -> 1x 202 Accepted, 31x 409 Conflict
+B  80 parallele Uploads bei Grenze 20 -> 20 Dokumente gespeichert
+C    1 parallele Nutzer, 4 Laeufe:   0.1s Gesamtzeit,   72.1 Profile/s, Median     16 ms, p95     17 ms, erfolgreich 4/4
+C   25 parallele Nutzer, 100 Laeufe:   1.1s Gesamtzeit,   88.9 Profile/s, Median    279 ms, p95    307 ms, erfolgreich 100/100
+C  100 parallele Nutzer, 400 Laeufe:   4.7s Gesamtzeit,   84.8 Profile/s, Median   1227 ms, p95   1313 ms, erfolgreich 400/400
+D  Serverprozess nach Last: Threads:	39, RSS 64 MB
+E  GET /profiling bei 5000 tatsaechlich offenen Jobs: Median 3.04 ms
+=== Lauf 4 (2026-10-07T11:43:07Z)
+A  32 parallele PATCH -> 1x 202 Accepted, 31x 409 Conflict
+B  80 parallele Uploads bei Grenze 20 -> 20 Dokumente gespeichert
+C    1 parallele Nutzer, 4 Laeufe:   0.1s Gesamtzeit,   52.0 Profile/s, Median     20 ms, p95     22 ms, erfolgreich 4/4
+C   25 parallele Nutzer, 100 Laeufe:   1.4s Gesamtzeit,   72.8 Profile/s, Median    331 ms, p95    379 ms, erfolgreich 100/100
+C  100 parallele Nutzer, 400 Laeufe:   5.5s Gesamtzeit,   73.3 Profile/s, Median   1432 ms, p95   1546 ms, erfolgreich 400/400
+D  Serverprozess nach Last: Threads:	41, RSS 62 MB
+E  GET /profiling bei 5000 tatsaechlich offenen Jobs: Median 1.59 ms

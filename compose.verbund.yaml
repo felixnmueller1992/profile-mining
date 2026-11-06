@@ -1,0 +1,35 @@
+# Zusatzdatei fuer den VERBUND (Teil B des Klickprotokolls).
+#
+# Traefik im neighmash-Stack spricht den Dienst nicht ueber den Host an, sondern
+# direkt im gemeinsamen Docker-Netz: traefik/dynamic/profilemining.yaml (Vorlage:
+# traefik_profilemining.yaml in diesem Ordner) zeigt auf
+#   http://profile-mining:8080
+# Dafuer muss dieser Container im Netz "app-public" haengen und so heissen, wie die
+# Route ihn adressiert.
+#
+# Ausserdem schliesst die Datei die beiden Wege, auf denen ein Aufrufer an der
+# Token-Pruefung der Route vorbeikaeme:
+#   - ports: !reset []        kein veroeffentlichter Host-Port. Der Dienst ist nur
+#                             noch ueber Traefik erreichbar (braucht Docker Compose
+#                             ab 2.24.4).
+#   - ALLOW_DEV_IDENTITY=0    der Header X-User-Id zaehlt nicht als Identitaet;
+#                             die Route entfernt ihn zusaetzlich.
+# Geprueft wird beides mit tests/verbund_auth_check.py.
+#
+#   docker network create app-public                 # einmalig, falls noch nicht da
+#   docker compose -f compose.yaml -f compose.verbund.yaml up -d --build
+#
+# Ohne diese Datei laeuft der Dienst allein (Teil A) mit Host-Port und /docs.
+services:
+  profile-mining:
+    ports: !reset []
+    environment:
+      ALLOW_DEV_IDENTITY: "0"
+    networks:
+      - default
+      - app-public
+
+networks:
+  app-public:
+    name: app-public
+    external: true

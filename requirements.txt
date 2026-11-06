@@ -1,0 +1,11 @@
+# Service (eigenstaendiger Betrieb)
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+pypdf>=4          # PDF-Ingestion (FA2: Dokument-Upload)
+# Tests
+pytest>=8
+httpx>=0.27
+# Embedding-Modell fuer den Betrieb mit Sprachmodell (Studien 3.1/3.2)
+sentence-transformers>=2.2
+torch

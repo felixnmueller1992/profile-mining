@@ -1,0 +1,5 @@
+Kurzvita. Ich bin Doktorand am Lehrstuhl für Informatik und arbeite an meiner Dissertation
+im Bereich Maschinelles Lernen und Sprachverarbeitung. Mein Schwerpunkt liegt auf
+Sprachmodellen und Named Entity Recognition für deutschsprachige Fachtexte. In einem
+Nebenprojekt beschäftige ich mich mit Empfehlungssystemen und dichten Retrievern.
+Auf der Konferenz suche ich Forschungskooperationen und Feedback zu meiner laufenden Arbeit.

@@ -1,0 +1,4 @@
+Reading note on work by another group
+Read: a survey on Robotics by a postdoc from a neighbouring group. It mainly covers motion planning and sensor fusion. Methodologically sound, the evaluation is easy to follow.
+I want to go deeper here -- it touches my own work in several places, and I would like to talk to people doing research in that area. I will look out for them at the conference.
+Note to self: the notation used there differs from what is common in my field.

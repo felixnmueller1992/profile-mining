@@ -1,0 +1,64 @@
+# Traefik-Route des Profilmining-Dienstes im Verbund mit dem neighmash-Backend.
+#
+# Ablage: als traefik/dynamic/profilemining.yaml in den neighmash-Stack kopieren.
+# Die Vorlage liegt in Code/profile_mining/traefik_profilemining.yaml. Unter Windows
+# bemerkt der Datei-Watcher neue Dateien nicht, danach also den Proxy neu starten.
+#
+# Die Route hat eine hoehere Prioritaet (110) als die Backend-Route (100). Damit
+# laufen die Profiling- und Embedding-Pfade nicht durch das Backend, und dessen
+# Token-Pruefung fehlt zunaechst. Diese Pruefung haengt die Route selbst ein.
+# Reihenfolge der Middlewares:
+#
+#   1. backend-cors          beantwortet die CORS-Vorabanfrage (OPTIONS) des Browsers
+#                            selbst. Sie traegt kein Token und darf nicht an die
+#                            Pruefung laufen, sonst scheitert jeder Browser-Client.
+#   2. profilemining-auth    ForwardAuth: Traefik schickt die Kopfzeilen der Anfrage
+#                            an GET /auth/me des Backends. Dort prueft dieselbe
+#                            Abhaengigkeit wie vor den Profiling-Routen des Backends
+#                            (StandardUserDep) die Signatur gegen den Schluesselsatz
+#                            des Realms, Aussteller, Zielgruppe, Ablauf, den
+#                            ausstellenden Client und die Rolle "user". Nur bei 2xx
+#                            geht die Anfrage weiter; sonst erhaelt der Client die
+#                            Antwort des Backends (401 bzw. 403).
+#   3. profilemining-ohne-dev-kennung
+#                            entfernt X-User-Id. Sonst koennte ein Aufrufer mit
+#                            gueltigem eigenem Token eine fremde Kennung vorgeben,
+#                            falls der Dienst mit ALLOW_DEV_IDENTITY=1 laeuft.
+#   4. backend-strip-prefix  entfernt /api; der Dienst laeuft mit leerem API_PREFIX.
+#
+# Der Dienst liest danach weiterhin nur den sub-Claim. Er darf das, weil jede
+# Anfrage, die ihn ueber diese Route erreicht, die Pruefung bestanden hat. Ein
+# zweiter Weg an Traefik vorbei darf deshalb nicht bestehen: compose.verbund.yaml
+# entfernt den Host-Port und schaltet die Dev-Identitaet ab.
+#
+# Adresse der Pruefung: das Backend als Container im Netz app-public (Dienstname
+# backend, Port 5000 aus app/main.py). Laeuft das Backend stattdessen als
+# Host-Prozess, lautet sie http://host.docker.internal:5000/auth/me.
+http:
+  routers:
+    profilemining:
+      entryPoints: ["https"]
+      rule: PathPrefix(`/api/profiling`) || PathPrefix(`/api/embeddings`)
+      middlewares:
+        - backend-cors@file
+        - profilemining-auth@file
+        - profilemining-ohne-dev-kennung@file
+        - backend-strip-prefix@file
+      service: profilemining
+      priority: 110        # hoeher als backend (100) -> gewinnt fuer diese Pfade
+      tls: {}
+  middlewares:
+    profilemining-auth:
+      forwardAuth:
+        address: http://backend:5000/auth/me
+        trustForwardHeader: false    # keine X-Forwarded-Kopfzeilen des Clients durchreichen
+        maxResponseBodySize: 65536   # Antwort von /auth/me ist ein kleines JSON
+    profilemining-ohne-dev-kennung:
+      headers:
+        customRequestHeaders:
+          X-User-Id: ""      # leerer Wert = Kopfzeile entfernen
+  services:
+    profilemining:
+      loadBalancer:
+        servers:
+          - url: http://profile-mining:8080   # Container im app-public-Netz

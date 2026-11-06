@@ -1,0 +1,30 @@
+Transaktionsverwaltung und Indexierung: eine empirische Untersuchung
+
+Zusammenfassung. Wir betrachten das Problem Transaktionsverwaltung und schlagen einen Ansatz vor, der Indexierung mit klassischen Techniken der Verteilte Systeme verbindet. In einer Reihe von Experimenten zeigen wir, dass sich die Ergebnisqualitaet dadurch messbar steigern laesst, ohne den Rechenaufwand wesentlich zu erhoehen.
+
+1 Einleitung
+Fragestellungen rund um Verteilte Systeme haben in den vergangenen Jahren erheblich an Aufmerksamkeit gewonnen. Dennoch bleibt Transaktionsverwaltung ein offenes Problem: bestehende Verfahren stossen an Grenzen, sobald die Datenmenge waechst oder die Eingaben heterogen werden. Ein wesentlicher Grund dafuer liegt in den Annahmen, die viele Verfahren ueber die Struktur der Eingabe treffen.
+In dieser Arbeit verfolgen wir einen anderen Weg. Wir stuetzen uns auf Indexierung und zeigen, dass sich damit ein Teil der genannten Einschraenkungen umgehen laesst. Unsere Beitraege sind: (i) eine Formalisierung des Problems, (ii) ein praktisch umsetzbares Verfahren und (iii) eine Auswertung auf mehreren Datensaetzen.
+
+3 Verfahren
+Unser Verfahren gliedert sich in drei Schritte. Zunaechst werden die Eingabedaten normalisiert und in Abschnitte zerlegt. Im zweiten Schritt wird fuer jeden Abschnitt eine Repraesentation berechnet; hier kommt Indexierung zum Einsatz. Der dritte Schritt aggregiert die Teilergebnisse zu einer Gesamtentscheidung.
+Die Komplexitaet des Verfahrens ist linear in der Zahl der Abschnitte. Alle Hyperparameter wurden auf einem separaten Validierungsteil bestimmt und fuer die Testlaeufe nicht mehr veraendert.
+
+4 Auswertung
+Wir evaluieren auf drei oeffentlich verfuegbaren Datensaetzen unterschiedlicher Groesse. Als Vergleichsverfahren dienen zwei etablierte Referenzimplementierungen sowie eine einfache Heuristik. Berichtet werden Mittelwerte ueber fuenf Laeufe mit unterschiedlichen Startwerten.
+Die Ergebnisse zeigen einen konsistenten Vorsprung unseres Verfahrens, der auf dem groessten Datensatz am deutlichsten ausfaellt. Eine Ablation legt nahe, dass der wesentliche Beitrag vom zweiten Schritt stammt.
+
+5 Fazit
+Wir haben ein Verfahren fuer Transaktionsverwaltung vorgestellt und empirisch untersucht. Offene Punkte betreffen vor allem die Uebertragbarkeit auf weitere Domaenen. In kuenftigen Arbeiten wollen wir die Annahmen des zweiten Schritts weiter lockern.
+
+Danksagung. Wir danken den anonymen Gutachtern fuer ihre hilfreichen Anmerkungen. Diese Arbeit wurde teilweise durch Projektmittel gefoerdert. Die Autoren erklaeren, dass keine Interessenkonflikte bestehen.
+
+Literatur
+[1] A. Fischer, B. Moreau. Proceedings of the International Conference, 2019, S. 112-127.
+[2] C. Lindqvist et al. Journal of Applied Methods 14(3), 2021, S. 55-71.
+[3] D. Osei, E. Tanaka. Technical Report TR-2020-08, 2020.
+[4] F. Bianchi. Institutsbericht IB-2018-4, 2018.
+[5] G. Haddad, H. Novak. Workshop Proceedings, 2022, S. 9-16.
+
+
+Erschienen in den Tagungsbaenden. Copyright verbleibt bei den Autoren. Lizenziert unter CC BY 4.0. Seite 1 von 12. Eingereicht am 14. Maerz, angenommen am 2. Juni. DOI wird nach Veroeffentlichung vergeben.

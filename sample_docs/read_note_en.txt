@@ -1,0 +1,2 @@
+Reading note (paper by someone else): a survey on computer vision and object detection.
+Interesting for background only; not my own work.

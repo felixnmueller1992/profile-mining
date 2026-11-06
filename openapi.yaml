@@ -1,0 +1,1110 @@
+openapi: 3.1.0
+info:
+  title: Profilmining-Service
+  description: Eigenstaendiger Profilmining-Service der Masterarbeit (Teilmenge der
+    Conference-App-Schnittstelle).
+  version: 0.2.1
+paths:
+  /profiling:
+    get:
+      tags:
+      - Profiling-Job
+      summary: Status des Profiling-Jobs abfragen
+      description: Liefert den Singleton-Job des authentifizierten Nutzers (Statuspolling).
+        Bei status=queued|running wird ein Retry-After-Header (2 s) gesetzt.
+      operationId: get_job_profiling_get
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobOut'
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Profiling-Job
+      summary: Profiling-Job anlegen
+      description: 'Legt den Job im Status ''draft'' an (Singleton: genau ein Job
+        je Nutzer). Danach Dokumente/URLs hinzufuegen und den Job per PATCH einreichen.'
+      operationId: create_job_profiling_post
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobOut'
+        '409':
+          description: Es existiert bereits ein Profiling-Job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: 'Dienst ausgelastet: zu viele offene Jobs'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - Profiling-Job
+      summary: Profiling-Job einreichen
+      description: 'Einzige erlaubte Transition: status=''submitted'' aus ''draft''.
+        Startet das Mining asynchron (202 Accepted); Fortschritt per GET /profiling
+        pollen.'
+      operationId: patch_job_profiling_patch
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobPatch'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobOut'
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Transition nicht erlaubt oder Job ohne Dokumente/URLs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Zu viele Einreichungen in diesem Zeitfenster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Profiling-Job
+      summary: Profiling-Job loeschen
+      description: Entfernt den Job samt Dokumenten, URLs und einem nicht abgeholten
+        Ergebnis (Datenminimierung); ein neuer Job kann danach angelegt werden.
+      operationId: delete_job_profiling_delete
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profiling/documents:
+    get:
+      tags:
+      - Dokumente
+      summary: Hochgeladene Dokumente auflisten
+      operationId: list_documents_profiling_documents_get
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentOut'
+                title: Response List Documents Profiling Documents Get
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - Dokumente
+      summary: Dokument hochladen
+      description: 'Multipart-Upload (Text oder PDF, max. 20 MB) zum Job im Status
+        ''draft''. Optionales Formularfeld ''metadata'' (JSON, z. B. {"is_own": true})
+        steuert die Autoritaetsgewichtung beim Mining.'
+      operationId: upload_document_profiling_documents_post
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_document_profiling_documents_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentOut'
+        '400':
+          description: metadata ist kein gueltiges JSON
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Job ist nicht im Status 'draft' oder zu viele Dokumente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '413':
+          description: Datei groesser als 20000000 Bytes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '415':
+          description: PDF-Extraktion nicht verfuegbar
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profiling/documents/{doc_id}:
+    delete:
+      tags:
+      - Dokumente
+      summary: Dokument entfernen
+      operationId: delete_document_profiling_documents__doc_id__delete
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Doc Id
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: Dokument nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Job ist nicht im Status 'draft'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profiling/urls:
+    get:
+      tags:
+      - URLs
+      summary: Angegebene URLs auflisten
+      operationId: list_urls_profiling_urls_get
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UrlOut'
+                title: Response List Urls Profiling Urls Get
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - URLs
+      summary: Quell-URLs hinzufuegen
+      description: Nur vom Nutzer explizit angegebene URLs; es findet keine autonome
+        Quellenerschliessung statt. Ungueltige URLs werden mit 422 abgewiesen.
+      operationId: add_urls_profiling_urls_post
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrlsIn'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlsAdded'
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Job ist nicht im Status 'draft' oder zu viele URLs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profiling/urls/{url_id}:
+    delete:
+      tags:
+      - URLs
+      summary: URL entfernen
+      operationId: delete_url_profiling_urls__url_id__delete
+      parameters:
+      - name: url_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Url Id
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: URL nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Job ist nicht im Status 'draft'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /profiling/result:
+    get:
+      tags:
+      - Ergebnis
+      summary: Mining-Ergebnis abholen (Single-Read)
+      description: 'Liefert das Ergebnis GENAU EINMAL (Read-and-Evict): beim ersten
+        Abruf wird es serverseitig geloescht, jeder weitere Abruf antwortet 410 Gone.
+        Unabgeholte Ergebnisse verfallen nach 1 h (TTL). Datenhaltung liegt damit
+        beim Client (On-Device-Profil).'
+      operationId: get_results_profiling_result_get
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultOut'
+        '404':
+          description: Kein Profiling-Job vorhanden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Job ist nicht im Status 'succeeded'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '410':
+          description: Ergebnis bereits abgeholt oder verfallen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /embeddings:
+    post:
+      tags:
+      - Embeddings
+      summary: Profiltext einbetten (zustandslos)
+      description: 'Erzeugt aus einer Profilbeschreibung Interessenfelder und Embedding(s)
+        fuer das geraeteseitige Matching; es wird nichts gespeichert. Optional: dim
+        (Matryoshka-Kuerzung), quant (float32|int8|binary), granularity=terms fuer
+        term-weise Vektoren.'
+      operationId: embed_profile_embeddings_post
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmbedIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbedOut'
+        '401':
+          description: Kein verwertbarer Aufrufer (nur bei STRICT_AUTH=1)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '413':
+          description: description laenger als 20000 Zeichen
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '429':
+          description: Zu viele Aufrufe in diesem Zeitfenster
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: weder oder beides von description und structured, description
+            zu kurz (min. 10 Zeichen), structured ohne Inhalt oder dim, quant bzw.
+            granularity ausserhalb des Wertebereichs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /healthz:
+    get:
+      tags:
+      - Meta
+      summary: Liveness-Check
+      description: Betriebszustand fuer Deployment/Watcher (Verbundtest).
+      operationId: healthz_healthz_get
+      parameters:
+      - name: X-User-Id
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+            JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+            zu koennen.
+          title: X-User-Id
+        description: Dev-Identitaet des Aufrufers. Produktiv ersetzt das verifizierte
+          JWT diesen Header; hier dient er dazu, den Dienst ohne Keycloak vorfuehren
+          zu koennen.
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    Body_upload_document_profiling_documents_post:
+      properties:
+        file:
+          type: string
+          contentMediaType: application/octet-stream
+          title: File
+        metadata:
+          type: string
+          title: Metadata
+          default: ''
+      type: object
+      required:
+      - file
+      title: Body_upload_document_profiling_documents_post
+    DocumentOut:
+      properties:
+        id:
+          type: string
+          title: Id
+        filename:
+          type: string
+          title: Filename
+        size:
+          type: integer
+          title: Size
+        content_type:
+          type: string
+          title: Content Type
+        sha256:
+          type: string
+          title: Sha256
+        uploaded_at:
+          type: string
+          title: Uploaded At
+      type: object
+      required:
+      - id
+      - filename
+      - size
+      - content_type
+      - sha256
+      - uploaded_at
+      title: DocumentOut
+      description: Metadaten eines hochgeladenen Dokuments (ohne extrahierten Text).
+    EmbedIn:
+      properties:
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        structured:
+          anyOf:
+          - $ref: '#/components/schemas/StructuredIn'
+          - type: 'null'
+          description: Strukturiertes Profil statt description. Der Dienst serialisiert
+            es kanonisch wie beim Mining und bettet es ohne Sprachmodell ein; die
+            Interessensgebiete sind dann die Forschungsfelder.
+        dim:
+          type: integer
+          title: Dim
+          description: Zieldimension, 0 = native Dimension; hoechstens 4096
+          default: 0
+        quant:
+          type: string
+          title: Quant
+          description: float32 | int8 | binary
+          default: float32
+        granularity:
+          type: string
+          title: Granularity
+          description: profile | terms (zusaetzlich term-weise Vektoren fuer erklaerbares
+            Matching)
+          default: profile
+      type: object
+      title: EmbedIn
+    EmbedOut:
+      properties:
+        areas_of_interest:
+          items:
+            type: string
+          type: array
+          title: Areas Of Interest
+        embedding:
+          items:
+            type: number
+          type: array
+          title: Embedding
+        term_embeddings:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TermEmbeddingOut'
+            type: array
+          - type: 'null'
+          title: Term Embeddings
+      type: object
+      required:
+      - areas_of_interest
+      - embedding
+      title: EmbedOut
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    HealthOut:
+      properties:
+        status:
+          type: string
+          title: Status
+        provider:
+          type: string
+          title: Provider
+        prefix:
+          type: string
+          title: Prefix
+      type: object
+      required:
+      - status
+      - provider
+      - prefix
+      title: HealthOut
+    JobOut:
+      properties:
+        id:
+          type: string
+          title: Id
+        status:
+          type: string
+          enum:
+          - draft
+          - queued
+          - running
+          - succeeded
+          - failed
+          title: Status
+        progress:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Progress
+        stage:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Stage
+        created_at:
+          type: string
+          title: Created At
+        submitted_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Submitted At
+        started_at:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Started At
+        updated_at:
+          type: string
+          title: Updated At
+        documents:
+          items:
+            $ref: '#/components/schemas/DocumentOut'
+          type: array
+          title: Documents
+        urls:
+          items:
+            $ref: '#/components/schemas/UrlOut'
+          type: array
+          title: Urls
+      type: object
+      required:
+      - id
+      - status
+      - created_at
+      - updated_at
+      - documents
+      - urls
+      title: JobOut
+      description: Oeffentliche Sicht auf den Profiling-Job (Singleton je Nutzer).
+    JobPatch:
+      properties:
+        status:
+          type: string
+          const: submitted
+          title: Status
+      type: object
+      required:
+      - status
+      title: JobPatch
+    Problem:
+      properties:
+        title:
+          type: string
+          title: Title
+        detail:
+          type: string
+          title: Detail
+          default: ''
+        status:
+          type: integer
+          title: Status
+      type: object
+      required:
+      - title
+      - status
+      title: Problem
+      description: Fehlerantwort (application/problem+json, angelehnt an RFC 9457).
+    ProfileOut:
+      properties:
+        description:
+          type: string
+          title: Description
+        structured:
+          additionalProperties: true
+          type: object
+          title: Structured
+        canonical_text:
+          type: string
+          title: Canonical Text
+          default: ''
+        ai_generated:
+          type: boolean
+          title: Ai Generated
+          description: true, wenn ein Sprachmodell das Profil erzeugt hat (Art. 50
+            Abs. 2 KI-Verordnung). Clients fuehren die Kennzeichnung beim Anzeigen
+            und Weitergeben der description mit.
+          default: true
+        matchable:
+          type: boolean
+          title: Matchable
+          description: false, wenn das Profil keine Forschungsfelder enthaelt. Der
+            Client soll es dann nicht ins Matching geben, sondern den Nutzer um weitere
+            Dokumente oder eine eigene Beschreibung bitten.
+          default: true
+        areas_of_interest:
+          items:
+            type: string
+          type: array
+          title: Areas Of Interest
+        signals:
+          items:
+            $ref: '#/components/schemas/SignalOut'
+          type: array
+          title: Signals
+        embedding:
+          items:
+            type: number
+          type: array
+          title: Embedding
+        term_embeddings:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TermEmbeddingOut'
+            type: array
+          - type: 'null'
+          title: Term Embeddings
+      type: object
+      required:
+      - description
+      - structured
+      - areas_of_interest
+      - signals
+      - embedding
+      title: ProfileOut
+    ResultOut:
+      properties:
+        id:
+          type: string
+          title: Id
+        completed_at:
+          type: string
+          title: Completed At
+        profile:
+          $ref: '#/components/schemas/ProfileOut'
+      type: object
+      required:
+      - id
+      - completed_at
+      - profile
+      title: ResultOut
+      description: Mining-Ergebnis; wegen Single-Read genau einmal abrufbar.
+    SignalOut:
+      properties:
+        kind:
+          type: string
+          title: Kind
+        value:
+          type: string
+          title: Value
+        salience:
+          type: number
+          title: Salience
+        n_sources:
+          type: integer
+          title: N Sources
+        evidence:
+          type: string
+          title: Evidence
+      type: object
+      required:
+      - kind
+      - value
+      - salience
+      - n_sources
+      - evidence
+      title: SignalOut
+      description: Aggregiertes Interessen-Signal mit Salienz und Textbeleg.
+    StructuredIn:
+      properties:
+        forschungsfelder:
+          items:
+            type: string
+          type: array
+          title: Forschungsfelder
+          default: []
+        methoden:
+          items:
+            type: string
+          type: array
+          title: Methoden
+          default: []
+        rolle:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Rolle
+        sucht:
+          items:
+            type: string
+          type: array
+          title: Sucht
+          default: []
+      type: object
+      title: StructuredIn
+      description: 'Strukturiertes Profil wie im Ergebnis (Feld structured), etwa
+        nach einer
+
+        feldweisen Korrektur in der App.'
+    TermEmbeddingOut:
+      properties:
+        term:
+          type: string
+          title: Term
+        kind:
+          type: string
+          title: Kind
+        salience:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Salience
+        embedding:
+          items:
+            type: number
+          type: array
+          title: Embedding
+      type: object
+      required:
+      - term
+      - kind
+      - embedding
+      title: TermEmbeddingOut
+      description: Vektor je saliente(m) Profilterm (fuer das lokale Matching).
+    UrlIn:
+      properties:
+        url:
+          type: string
+          minLength: 1
+          format: uri
+          title: Url
+        hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Hint
+      type: object
+      required:
+      - url
+      title: UrlIn
+    UrlOut:
+      properties:
+        id:
+          type: string
+          title: Id
+        url:
+          type: string
+          title: Url
+        hint:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Hint
+      type: object
+      required:
+      - id
+      - url
+      title: UrlOut
+      description: Vom Nutzer explizit angegebene Quelle-URL.
+    UrlsAdded:
+      properties:
+        added:
+          items:
+            $ref: '#/components/schemas/UrlOut'
+          type: array
+          title: Added
+      type: object
+      required:
+      - added
+      title: UrlsAdded
+    UrlsIn:
+      properties:
+        urls:
+          items:
+            $ref: '#/components/schemas/UrlIn'
+          type: array
+          title: Urls
+      type: object
+      required:
+      - urls
+      title: UrlsIn
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
